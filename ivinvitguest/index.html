@@ -1,1 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event Invitation Generator</title>
+    <style>
+        body {
+          margin: 0;
+          font-family: "Poppins", sans-serif;
+          background-color: #002b5b;
+          color: white;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
 
+        .container {
+          background: rgba(255, 255, 255, 0.1);
+          padding: 30px;
+          border-radius: 20px;
+          width: 350px;
+          box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+          text-align: center;
+        }
+
+        h2 {
+          color: #ffcc00;
+          margin-bottom: 20px;
+        }
+
+        input, textarea, select {
+          width: 90%;
+          padding: 10px;
+          margin: 8px 0;
+          border-radius: 8px;
+          border: none;
+          outline: none;
+        }
+
+        button {
+          width: 95%;
+          padding: 12px;
+          margin-top: 12px;
+          background-color: #00aaff;
+          border: none;
+          border-radius: 10px;
+          color: white;
+          font-weight: bold;
+          cursor: pointer;
+        }
+
+        .preview {
+          margin-top: 20px;
+          background-color: rgba(255, 255, 255, 0.15);
+          padding: 15px;
+          border-radius: 10px;
+          display: none;
+        }
+
+        .share-link {
+          color: #00ffcc;
+          word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎉 Event Invitation Generator 🎉</h2>
+
+    <input type="text" id="guestName" placeholder="Guest Name" />
+    <input type="text" id="eventType" placeholder="Event (e.g. Birthday, Engagement)" />
+    <input type="date" id="date" />
+    <input type="text" id="time" placeholder="Time (e.g. 8:00 PM)" />
+    <input type="text" id="venue" placeholder="Venue" />
+    <textarea id="message" placeholder="Custom message..."></textarea>
+    <select id="voiceSelect">
+        <option value="male">Male Voice</option>
+        <option value="female">Female Voice</option>
+    </select>
+    <button onclick="generateInvitation()">Generate Invitation</button>
+
+    <div id="preview" class="preview"></div>
+</div>
+
+<script>
+    function generateInvitation() {
+      const guest = document.getElementById("guestName").value.trim();
+      const event = document.getElementById("eventType").value.trim();
+      const date = document.getElementById("date").value;
+      const time = document.getElementById("time").value.trim();
+      const venue = document.getElementById("venue").value.trim();
+      const message = document.getElementById("message").value.trim();
+      const voiceType = document.getElementById("voiceSelect").value;
+
+      if (!guest || !event || !date || !time || !venue) {
+        alert("Please fill all fields before generating the invitation.");
+        return;
+      }
+
+      const invitationText = `Hello ${guest}, you are cordially invited to our ${event} on ${date} at ${time}, at ${venue}. ${message}`;
+
+      // --- Speak voice locally for YOU ---
+      const utterance = new SpeechSynthesisUtterance(invitationText);
+      const voices = speechSynthesis.getVoices();
+      utterance.voice =
+        voices.find((v) =>
+          voiceType === "male"
+            ? v.name.toLowerCase().includes("male")
+            : v.name.toLowerCase().includes("female")
+        ) || voices[0];
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utterance);
+
+      // --- Create simple guest file (text only) ---
+      const guestHTML = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Invitation for ${guest}</title>
+        <style>
+          body {
+            font-family: Poppins, sans-serif;
+            background-color: #002b5b;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+          }
+          .card {
+            background: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+          }
+          h2 { color: #ffcc00; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h2>🎉 Invitation for ${guest} 🎉</h2>
+          <p>${invitationText}</p>
+          <p><em>We look forward to seeing you!</em></p>
+        </div>
+      </body>
+      </html>
+      `;
+
+      const blob = new Blob([guestHTML], { type: "text/html" });
+      const fileURL = URL.createObjectURL(blob);
+
+      // --- Live preview + download link ---
+      const previewDiv = document.getElementById("preview");
+      previewDiv.style.display = "block";
+      previewDiv.innerHTML = `
+        <h3>Invitation Preview</h3>
+        <p>${invitationText}</p>
+        <a href="${fileURL}" download="Invitation_for_${guest.replace(/\s+/g, '_')}.html" class="share-link">
+          💌 Download & Share Invitation
+        </a>
+      `;
+    }
+
+    // fix for voice loading in some browsers
+    window.speechSynthesis.onvoiceschanged = () => {};
+</script>
+
+</body>
+</html>
